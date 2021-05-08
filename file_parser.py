@@ -10,15 +10,17 @@ __date__    = "06-Apr-2021"
 USAGE DETAILS:
 Class: xFinder()
 Functions:
-|_define_keywords(keyword, file_type) -> Define the keyword and file format to search (txt, log)
+|___init__(target_dir): Init the Target directory and log file.
+|_define_keywords(keyword, file_type, f_operation) -> Define the keyword, file format(txt, log) and opertion to be implemented
 |_print_parameters() -> Prints the keyword to be searched, file type and the working Directory
 |_exceptions(dir_exceptions=[], file_exceptions=[]) -> Pass the dir/file names to be avoided (full path not required)
-|_parse_dir(operation) -> Function to start the operation (search) in the current directory
+|_parse_dir() -> Function to start the required operation in the target directory
 
 SUPPORTED OPERATIONS:
 * search -> search for a key work in the mentioned file types.
 
 """
+
 import os, re, sys
 import logging
 import argparse
@@ -27,17 +29,18 @@ import argparse
 dir_exp = ['.git']
 file_exp = ['.gitignore']
 
-# Define the parameters
+# Define the parameters (default)
 f_op = 'search'
-key = 'honey'
+key = 'honey bee'
 f_type = 'txt'
+target_dir=os.getcwd()
+log_dest=''
 
 class xFinder():
     
-    def __init__(self, home_dir=os.getcwd()):
-        # Init the logger module
-        self.home_dir = home_dir
-        os.chdir(self.home_dir)
+    def __init__(self, target_dir):
+        
+        self.target_dir = target_dir
 
         # Get the file name for logging purpose
         self.file_name = os.path.basename(__file__)
@@ -45,7 +48,11 @@ class xFinder():
         logging.basicConfig(filename=self.log_name, filemode='w', format='%(asctime)s - %(message)s', \
             datefmt='%d-%b-%Y %H:%M:%S', level=logging.INFO)
         logging.info("Log for File: {}".format(self.file_name))
-        
+        global log_dest
+        log_dest = "{}\\{}".format(os.getcwd(), self.log_name)
+
+        os.chdir(self.target_dir)
+
         # Declare the dir/file exceptions
         self.dir_exceptions=[]
         self.file_exceptions=[self.log_name] 
@@ -61,14 +68,14 @@ class xFinder():
         self.file_type = file_type
         self.op = f_operation
         
-        logging.info("OPERATION= {}\nKEYWORD=\"{}\"\nFILE_TYPE=\".{}\" \nHOME_DIR: {}".\
-            format(str.upper(self.op), self.keyword, self.file_type, self.home_dir))
+        logging.info("OPERATION= {}\nKEYWORD=\"{}\"\nFILE_TYPE=\".{}\" \nTARGET_DIRECTORY: {}".\
+            format(str.upper(self.op), self.keyword, self.file_type, self.target_dir))
 
     # Function to print the search parameters
     def print_parameters(self):
         print("PARAMETERS\nOperation: {}\nKeyword: {}\nFile_Type: {}".format(str.upper(self.op),\
         self.keyword, self.file_type))
-        print("Home_Dir: {}".format(self.home_dir))
+        print("Target_Directory: {}\n".format(self.target_dir))
 
     # Function to search the keyword in the files
     def find_words(self, f_name):
@@ -81,7 +88,8 @@ class xFinder():
             z = re.search(patt, line)
             if z:
                 to_print = str(self.keyword).join( list(z.groups()) )
-                print("File: {} -> MATCH FOUND for \"{}\" -> Line {}: {}".format(f_name, self.keyword, l_no, to_print))
+                print("{}\\{} -> MATCH FOUND for \"{}\" -> Line {}: {}".format(os.getcwd().replace(self.target_dir,'.'), \
+                    f_name, self.keyword, l_no, to_print))
                 logging.info("{}\\{} -> MATCH FOUND for \"{}\" -> Line {}: {}".format(os.getcwd(), \
                     f_name, self.keyword, l_no, to_print))
         f1.close()
@@ -119,7 +127,7 @@ class xFinder():
         return 1
 
 
-
+# Add support for command line arguments
 parser = argparse.ArgumentParser()
 parser.add_argument("--keyword", dest='keyword', help="Keyword to search")
 parser.add_argument("--format", dest='f_format', help="File format to be searched")
@@ -128,29 +136,22 @@ parser.add_argument("--file_excep", dest='file_exc', help="Files to be exempted.
     Usage: [file1, file2, file3]")
 parser.add_argument("--dir_excep", dest='dir_exc', help="Directories to be exempted\
     Usage: [dir1, dir2, dir3]")
-parser.add_argument("--home_dir", dest='home_dir', help="Directory to perform the operation")
+parser.add_argument("--target_dir", dest='target_dir', help="Directory to perform the operation")
 
 args = parser.parse_args()
 
-keyword = args.keyword if args.keyword else keyword
-file_type = args.f_format if args.f_format else file_type
+# Update the paramters to the variables
+key = args.keyword if args.keyword else key
+f_type = args.f_format if args.f_format else f_type
 f_op = args.f_operation if args.f_operation else 'search'
-file_exceptions = file_exceptions+ list(args.file_exc.split()) if args.file_exc else file_exceptions
-dir_exceptions = dir_exceptions+ list(args.dir_exc.split()) if args.dir_exc else dir_exceptions
-home_dir = args.home_dir if args.home_dir else home_dir
-
-func = find_words
-print('keyword: {}'.format(keyword))
-print('file type: {}'.format(file_type))
-print('operation: {}'.format(f_op))
-print('file_excep: {}'.format(file_exceptions))
-print('dir_excep: {}'.format(dir_exceptions))
-print('home_dir: {}'.format(home_dir) )
+dir_exp = dir_exp+ list(args.dir_exc.split()) if args.dir_exc else dir_exp
+file_exp = file_exp+ list(args.file_exc.split()) if args.file_exc else file_exp
+target_dir = args.target_dir if args.target_dir else target_dir
 
 
-test = xFinder()
+test = xFinder(target_dir)
 test.define_keywords(key, f_type, f_op)
 test.exceptions(dir_exp, file_exp)
 test.print_parameters()
 test.parse_dir()
-
+print("\nLOG AT: {}".format(log_dest))

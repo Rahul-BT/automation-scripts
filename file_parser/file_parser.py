@@ -31,16 +31,24 @@ file_exp = ['.gitignore']
 
 # Define the parameters (default)
 f_op = 'search'
-key = 'honey bee'
-f_type = 'txt'
-target_dir=os.getcwd()
 log_dest=''
+
+parameters = {
+    'f_op': 'search',
+    'f_type': 'txt',
+    'search': {'val_1': ''},
+    'rename': {'type':'', 'val_1':'', 'val_2':''},
+    'target_dir': os.getcwd(),
+    'dir_exp': ['.git'],
+    'file_exp': ['.gitignore']
+}
 
 class xFinder():
     
-    def __init__(self, target_dir):
-        
-        self.target_dir = target_dir
+    def __init__(self, parameters):
+        self.target_dir = parameters['target_dir']
+        self.op = parameters['f_op']
+        self.target_dir = parameters['target_dir']
 
         # Get the file name for logging purpose
         self.file_name = os.path.basename(__file__)
@@ -54,31 +62,46 @@ class xFinder():
         os.chdir(self.target_dir)
 
         # Declare the dir/file exceptions
-        self.dir_exceptions=[]
-        self.file_exceptions=[self.log_name] 
+        self.dir_exceptions = parameters['dir_exp']
+        self.file_exceptions = parameters['file_exp'] + [self.log_name]
 
-    def exceptions(self, dir_exceptions=[], file_exceptions=[]):
-        # Directory and files to avoid checking
-        self.dir_exceptions += dir_exceptions
-        self.file_exceptions += file_exceptions
+        self.file_type = parameters['f_type']
 
-    # Function to define the keywords for search
-    def define_keywords(self, keyword, file_type, f_operation):
-        self.keyword = keyword
-        self.file_type = file_type
-        self.op = f_operation
-        
-        logging.info("OPERATION= {}\nKEYWORD=\"{}\"\nFILE_TYPE=\".{}\" \nTARGET_DIRECTORY: {}".\
+        if self.op == 'search':
+            self.keyword = parameters[parameters['f_op']]['val_1']
+            logging.info("OPERATION= {}\nKEYWORD=\"{}\"\nFILE_TYPE=\".{}\" \nTARGET_DIRECTORY: {}".\
             format(str.upper(self.op), self.keyword, self.file_type, self.target_dir))
+            
+        elif self.op == 'rename':
+            self.rename = parameters[parameters['f_op']]
+            logging.info("OPERATION= {}\nType=\"{} - {} {}\"\nFILE_TYPE=\".{}\" \nTARGET_DIRECTORY: {}".\
+            format(str.upper(self.op), self.rename['type'],self.rename['val_1'], self.rename['val_2'], \
+                self.file_type, self.target_dir))
+        
 
-    # Function to print the search parameters
+
+    # def exceptions(self, dir_exceptions=[], file_exceptions=[]):
+    #     """ Directory and files to avoid checking """
+    #     self.dir_exceptions += dir_exceptions
+    #     self.file_exceptions += file_exceptions
+
+    # def define_keywords(self, keyword, file_type):
+    #     """ Function to define the keywords for search """
+    #     self.keyword = keyword
+    #     self.file_type = file_type
+        
+    #     logging.info("OPERATION= {}\nKEYWORD=\"{}\"\nFILE_TYPE=\".{}\" \nTARGET_DIRECTORY: {}".\
+    #         format(str.upper(self.op), self.keyword, self.file_type, self.target_dir))
+
     def print_parameters(self):
-        print("PARAMETERS\nOperation: {}\nKeyword: {}\nFile_Type: {}".format(str.upper(self.op),\
-        self.keyword, self.file_type))
-        print("Target_Directory: {}\n".format(self.target_dir))
+        """ Function to print the search parameters """
+        #print("PARAMETERS\nOperation: {}\nKeyword: {}\nFile_Type: {}".format(str.upper(self.op),\
+        #self.keyword, self.file_type))
+        #print("Target_Directory: {}\n".format(self.target_dir))
+        print("PARAMETERS\n{}".format(self.parameters))
 
-    # Function to search the keyword in the files
     def find_words(self, f_name):
+        """ Function to search the keyword in the files """
         f1 = open(f_name, 'r')
         # Pattern to find 3 words before and after the keyword
         patt = "((?:[\S]+\s+){1,3})"+self.keyword+"((?:\s+[\S]+){1,3})"
@@ -93,13 +116,24 @@ class xFinder():
                 logging.info("{}\\{} -> MATCH FOUND for \"{}\" -> Line {}: {}".format(os.getcwd(), \
                     f_name, self.keyword, l_no, to_print))
         f1.close()
+    
+    def rename_file(self, f_name):
+        split_fname = re.search('(.*)(\.[\w]*)$', f_name).groups()
+        new_name = {
+            'prefix': "{}_{}".format(self.rename['val_1']),
+            'suffix': "{}_{}{}".format(self.rename['val_1'], split_fname[0], split_fname[1]),
+            'subs': f_name.replace(self.rename['val_1'], self.rename['val_2'])
+        }
 
-    # Function (recursive) to parse the directories and find files with the given format
-    # Requires f_operation that defines the type of operation to be performed
+        os.rename(f_name, new_name[self.rename['type']])
+
     def parse_dir(self):
+        """ Function (recursive) to parse the directories and find files with the given format. 
+            Requires f_operation that defines the type of operation to be performed """
         elements = os.listdir()
         
-        func_dict = {'search': self.find_words}
+        func_dict = {'search': self.find_words,
+                    'rename': self.rename_file}
         try:
             func_to_exec = func_dict[self.op]
         except :
@@ -128,30 +162,44 @@ class xFinder():
 
 
 # Add support for command line arguments
-parser = argparse.ArgumentParser()
-parser.add_argument("--keyword", dest='keyword', help="Keyword to search")
-parser.add_argument("--format", dest='f_format', help="File format to be searched")
-parser.add_argument("--op", dest='f_operation', help="Operation to be performed", choices=['search', 'rename'])
-parser.add_argument("--file_excep", dest='file_exc', help="Files to be exempted.\
+parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
+parser.add_argument("--search", dest='search', \
+    help="Keyword to search in files. \nUsage: --search \"keyword\"")
+parser.add_argument("--rename", dest='rename', nargs='*', \
+    help="Rename files flag. Usage:\
+        \n1. --rename prefix str_1 -> Prefix all file names in target. \
+        \n2. --rename suffix str_1 -> Suffix str_1 at the end of the filename. \
+        \n3. --rename subs old_str new_str\' -> Substitue a part of the file name.")
+parser.add_argument("--file_format", dest='f_format', help="File format to be use in operation")
+parser.add_argument("--file_excep", dest='file_exc', help="Files to be exempted from operation.\
     Usage: [file1, file2, file3]")
-parser.add_argument("--dir_excep", dest='dir_exc', help="Directories to be exempted\
+parser.add_argument("--dir_excep", dest='dir_exc', help="Directories to be exempted from operation\
     Usage: [dir1, dir2, dir3]")
 parser.add_argument("--target_dir", dest='target_dir', help="Directory to perform the operation")
 
 args = parser.parse_args()
 
 # Update the paramters to the variables
-key = args.keyword if args.keyword else key
-f_type = args.f_format if args.f_format else f_type
-f_op = args.f_operation if args.f_operation else 'search'
-dir_exp = dir_exp+ list(args.dir_exc.split()) if args.dir_exc else dir_exp
-file_exp = file_exp+ list(args.file_exc.split()) if args.file_exc else file_exp
-target_dir = args.target_dir if args.target_dir else target_dir
+parameters['f_type'] = args.f_format if args.f_format else parameters['f_type']
 
+parameters['dir_exp'] = parameters['dir_exp']+ list(args.dir_exc.split()) \
+    if args.dir_exc else parameters['dir_exp']
 
-test = xFinder(target_dir)
-test.define_keywords(key, f_type, f_op)
-test.exceptions(dir_exp, file_exp)
-test.print_parameters()
+parameters['file_exp'] = parameters['file_exp']+ list(args.file_exc.split()) \
+    if args.file_exc else parameters['file_exp']
+
+parameters['target_dir'] = args.target_dir if args.target_dir else parameters['target_dir']
+
+if args.search:
+    parameters['f_op'] = 'search'
+    parameters['search']['val_1'] = args.search
+elif args.rename:
+    parameters['f_op'] = 'rename'
+    values = args.rename.split()
+    parameters['rename'] = dict(zip(parameters[f_op], values))
+
+test = xFinder(parameters)
+
+# test.print_parameters()
 test.parse_dir()
 print("\nLOG AT: {}".format(log_dest))

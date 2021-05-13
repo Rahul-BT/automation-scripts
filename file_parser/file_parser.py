@@ -1,15 +1,15 @@
 """
-This python script is used to search keyword in many text/log files. The files can be in many directories in the home
-directory. This script will go through each dir in the home, open the text/log files and search for the keyword.
-If found, then the Filename and line will be printed.
+This python script is used to perform certain operations as listed below. 
+This script will look at target directory (and its children), and performs the operation on the files.
+The output will be displayed on the console and also, an output log will be created.
 
 __author__  = "Rahul B Thomas"
 __status__  = "Development"
 __date__    = "06-Apr-2021"
 
-USAGE DETAILS:
+CODE_STRUCTURE
 Class: xFinder()
-Functions:
+Class_Functions:
 |___init__(parameters): Pass the parameters and init the class object.
 |_print_parameters() -> Prints the keyword to be searched, file type and the working Directory
 |_find_words(f_name) -> Search for the keyword in file 'f_name'
@@ -17,17 +17,17 @@ Functions:
 |_rename_file(f_name) -> Rename file 'f_name' based on 'type' parameter
 |_parse_dir() -> Function to start the required operation in the target directory
 
-SUPPORTED OPERATIONS:
+SUPPORTED_OPERATIONS:
 1. search -> search for a key word in the mentioned file type
 [CMD] python file_parser.py --search keyword --target_dir <target_dir> --file_format txt
 
 2. replace -> Replace a keyword in a file with another word. Works with search operation.
-[CMD] python file_parser.py --search keyword --replace value --target_dir <target_dir> --file_format txt
+[CMD] python file_parser.py --search keyword --replace_by value --target_dir <target_dir> --file_format txt
 
 3. rename -> rename [postfix, suffix, subs(titude)] files based on file type.
 [CMD] python file_parser.py --rename prefix Logs --target_dir <target_dir>
 [CMD] python file_parser.py --rename suffix documentation --target_dir <target_dir>
-[CMD] python file_parser.py --rename subs logs test_logs --target_dir <target_dir>
+[CMD] python file_parser.py --rename subs logs test_logs --target_files <file1 file2 ... file_n>
 
 """
 

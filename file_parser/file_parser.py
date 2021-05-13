@@ -143,8 +143,10 @@ class xFinder():
         line_list=[]
         for line in f1:
             l_no += 1
-            if self.keyword in line:
-                line_to_write = line.replace(self.keyword, self.replace_value)
+            patt = r"\b{}\b".format(self.keyword)
+            if re.search(patt, line):
+                #line_to_write = line.replace(self.keyword, self.replace_value)
+                line_to_write = re.sub(patt, self.replace_value, line)
                 f2.write(line_to_write)
                 line_list.append(l_no)
             else:
@@ -154,10 +156,10 @@ class xFinder():
         f2.close()
         
         if line_list:
-            print("{}\\{} -> REPLACED \"{}\" with \"{}\" in LINES: {}".format(os.getcwd().replace(self.target_dir,'.'), \
-                f_name, self.keyword, self.replace_value, ' '.join([str(x) for x in line_list])))
-            logging.info("{}\\{} -> REPLACED \"{}\" with \"{}\" in LINES: {}".format(os.getcwd(), f_name, \
-                self.keyword, self.replace_value, ' '.join([str(x) for x in line_list])))
+            print("{}\\{} -> CREATED {}\nREPLACED \"{}\" with \"{}\" in LINES: {}".format(os.getcwd().replace(self.target_dir,'.'), \
+                f_name, temp_file,self.keyword, self.replace_value, ' '.join([str(x) for x in line_list])))
+            logging.info("{}\\{} -> CREATED {}\nREPLACED \"{}\" with \"{}\" in LINES: {}".format(os.getcwd(), f_name, \
+                temp_file, self.keyword, self.replace_value, ' '.join([str(x) for x in line_list])))
             self.file_exceptions.append(temp_file)
         else:
             os.remove(temp_file)

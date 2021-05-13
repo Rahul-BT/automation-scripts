@@ -38,7 +38,7 @@ import argparse
 parameters = {
     'f_op': 'search',
     'f_type': 'txt',
-    'search': {'val_1': ''},
+    'search': {'val_1': 'val'},
     'replace': {'val_1': '', 'val_2':''},
     'rename': {'type':'', 'val_1':'', 'val_2':''},
     'target_dir': os.getcwd(),
@@ -56,6 +56,7 @@ class xFinder():
             parameters (dict): A dict having all the parameters required for the operation (search/rename)
         """
 
+        self.hits = 0
         self.target_dir = parameters['target_dir']
         self.op = parameters['f_op']
 
@@ -63,8 +64,9 @@ class xFinder():
         self.file_name = os.path.basename(__file__)
         self.log_name = "{}.log".format(self.file_name[:-3])
         logging.basicConfig(filename=self.log_name, filemode='w', format='%(asctime)s - %(message)s', \
-            datefmt='%d-%b-%Y %H:%M:%S', level=logging.INFO)
-        logging.info("\n\n\nLog for File: {}".format(self.file_name))
+            datefmt='%d-%b-%Y %H:%M:%S', level=logging.DEBUG)
+        #logging.info('\n')
+        logging.info("Log for File: {}".format(self.file_name))
         logging.info("[CMD] {}".format(parameters['cmd-line']))
         global log_dest
         log_dest = "{}\\{}".format(os.getcwd(), self.log_name)
@@ -114,15 +116,19 @@ class xFinder():
         print("Target_Directory: {}\n".format(self.target_dir))
 
     def find_words(self, f_name):
-        """Function to search keyword in file
+        """Function to search keyword in file. Substrings are also included
 
         Args:
             f_name (file name): File name passed for searching keyword
+        
+        Returns:
+            hits [int]: No. of times the keyword is found
         """
         f1 = open(f_name, 'r')
         # Pattern to find 3 words before and after the keyword
-        patt = r"((?:[\S]+\s+|[\w]+){0,3})" + self.keyword + r"((?:[\w]+|\s+[\S]+){0,3})"
-        l_no = 0
+        patt = r"((?:[\S]+\s+|[\w]+){0,3})"+self.keyword+ r"((?:[\w]+|\s+[\S]+){0,3})"
+        l_no=0
+        hits=0
         for line in f1:
             l_no += 1 # For line numbers
             z = re.search(patt, line)
@@ -132,15 +138,26 @@ class xFinder():
                     f_name, self.keyword, l_no, to_print))
                 logging.info("{}\\{} -> MATCH FOUND for \"{}\" -> Line {}: {}".format(os.getcwd(), \
                     f_name, self.keyword, l_no, to_print))
+                hits += 1
         f1.close()
+        return hits
     
     def replace_word(self, f_name):
+        """Function to replace keyword with a new word in files
+
+        Args:
+            f_name (file name): File name passed for searching keyword
+
+        Returns:
+            hits [int]: No. of times the keyword gets replaced
+        """
         f1 = open(f_name, 'r')
         split_fname = re.search('(.*)(\.[\w]*)$', f_name).groups()
         temp_file = "{}_{}_{}{}".format( split_fname[0], 'replaced', self.replace_value, split_fname[1])
         f2 = open(temp_file,'w')
         l_no=0
         line_list=[]
+        hits=0
         for line in f1:
             l_no += 1
             patt = r"\b{}\b".format(self.keyword)
@@ -149,6 +166,7 @@ class xFinder():
                 line_to_write = re.sub(patt, self.replace_value, line)
                 f2.write(line_to_write)
                 line_list.append(l_no)
+                hits += 1
             else:
                 f2.write(line)
         
@@ -163,12 +181,17 @@ class xFinder():
             self.file_exceptions.append(temp_file)
         else:
             os.remove(temp_file)
+        
+        return hits
 
     def rename_file(self, f_name):
         """Function to rename file
 
         Args:
             f_name (file name): File to be renamed (prefix, suffix, subs(titute))
+
+        Returns:
+            [int]: 1 if file is renamed, else 0
         """
         split_fname = re.search('(.*)(\.[\w]*)$', f_name).groups()
         new_name = {
@@ -180,6 +203,8 @@ class xFinder():
             os.rename(f_name, new_name[self.rename['type']])
             logging.info("{}\\{} -> {}".format(os.getcwd(), f_name, new_name[self.rename['type']]))
             print("{}\\{} -> {}".format(os.getcwd(), f_name, new_name[self.rename['type']]))
+            return 1
+        return 0
 
     def parse_dir(self):
         """ Function (recursive) to parse the directories and find files with the given format. 
@@ -211,9 +236,10 @@ class xFinder():
             for i in file_:
                 if i not in self.file_exceptions:
                     logging.info("{}\\{}".format(os.getcwd(), i))    
-                    func_to_exec(i)
-            return 0
-        return 0
+                    self.hits += func_to_exec(i)
+        if os.getcwd() == self.target_dir:
+            logging.info("Total no. of hits: {}\n\n".format(str(self.hits)))
+        return self.hits
 
 
 # Add support for command line arguments
@@ -277,5 +303,7 @@ elif args.rename:
 test = xFinder(parameters)
 
 test.print_parameters()
-test.parse_dir()
-print("\nLOG AT: {}".format(log_dest))
+hits = test.parse_dir()
+
+print("\nTotal no. of hits: "+ str(hits))
+print("LOG AT: {}".format(log_dest))

@@ -10,14 +10,20 @@ __date__    = "06-Apr-2021"
 USAGE DETAILS:
 Class: xFinder()
 Functions:
-|___init__(target_dir): Init the Target directory and log file.
-|_define_keywords(keyword, file_type, f_operation) -> Define the keyword, file format(txt, log) and opertion to be implemented
+|___init__(parameters): Pass the parameters and init the class object.
 |_print_parameters() -> Prints the keyword to be searched, file type and the working Directory
-|_exceptions(dir_exceptions=[], file_exceptions=[]) -> Pass the dir/file names to be avoided (full path not required)
+|_find_words(f_name) -> Search for the keyword in file 'f_name'
+|_rename_file(f_name) -> Rename file 'f_name' based on 'type' parameter
 |_parse_dir() -> Function to start the required operation in the target directory
 
 SUPPORTED OPERATIONS:
-* search -> search for a key work in the mentioned file types.
+1. search -> search for a key word in the mentioned file type
+[CMD] python file_parser.py --search keyword --target_dir <target_dir> --file_format txt
+
+2. rename -> rename [postfix, suffix, subs(titude)] files based on file type.
+[CMD] python file_parser.py --rename prefix Logs --target_dir <target_dir>
+[CMD] python file_parser.py --rename suffix documentation --target_dir <target_dir>
+[CMD] python file_parser.py --rename subs logs test_logs --target_dir <target_dir>
 
 """
 
@@ -39,6 +45,11 @@ parameters = {
 class xFinder():
     
     def __init__(self, parameters):
+        """Init class object with the parameters
+
+        Args:
+            parameters (dict): A dict having all the parameters required for the operation (search/rename)
+        """
 
         self.target_dir = parameters['target_dir']
         self.op = parameters['f_op']
@@ -47,7 +58,7 @@ class xFinder():
         # Get the file name for logging purpose
         self.file_name = os.path.basename(__file__)
         self.log_name = "{}.log".format(self.file_name[:-3])
-        logging.basicConfig(filename=self.log_name, filemode='a', format='%(asctime)s - %(message)s', \
+        logging.basicConfig(filename=self.log_name, filemode='w', format='%(asctime)s - %(message)s', \
             datefmt='%d-%b-%Y %H:%M:%S', level=logging.INFO)
         logging.info("\n\n\nLog for File: {}".format(self.file_name))
         logging.info("[CMD] {}".format(parameters['cmd-line']))
@@ -72,8 +83,7 @@ class xFinder():
             logging.info("OPERATION= {}\nType=\"{} {} {}\"\nFILE_TYPE=\".{}\" \nTARGET_DIRECTORY: {}".\
             format(str.upper(self.op), self.rename['type'],self.rename['val_1'], self.rename['val_2'], \
                 self.file_type, self.target_dir))
-    # TODO:
-    # Fix the print parametrs function, especially the rename part
+
     def print_parameters(self):
         """ Function to print the parameters """
         if self.op == 'search':
@@ -90,7 +100,11 @@ class xFinder():
         #print("PARAMETERS\n{}".format(self.parameters))
 
     def find_words(self, f_name):
-        """ Function to search the keyword in the files """
+        """Function to search keyword in file
+
+        Args:
+            f_name (file name): File name passed for searching keyword
+        """
         f1 = open(f_name, 'r')
         # Pattern to find 3 words before and after the keyword
         patt = "((?:[\S]+\s+){1,3})"+self.keyword+"((?:\s+[\S]+){1,3})"
@@ -107,6 +121,11 @@ class xFinder():
         f1.close()
     
     def rename_file(self, f_name):
+        """Function to rename file
+
+        Args:
+            f_name (file name): File to be renamed (prefix, suffix, subs(titute))
+        """
         split_fname = re.search('(.*)(\.[\w]*)$', f_name).groups()
         new_name = {
             'prefix': "{}_{}".format(self.rename['val_1'], f_name),
@@ -154,6 +173,7 @@ class xFinder():
 
 # Add support for command line arguments
 parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
+
 parser.add_argument("--search", dest='search', \
     help="Keyword to search in files. \nUsage: --search \"keyword\"")
 parser.add_argument("--rename", dest='rename', nargs='*', \
@@ -162,10 +182,10 @@ parser.add_argument("--rename", dest='rename', nargs='*', \
         \n2. --rename suffix str_1 -> Suffix str_1 at the end of the filename. \
         \n3. --rename subs old_str new_str\' -> Substitue a part of the file name.")
 parser.add_argument("--file_format", dest='f_format', help="File format to be use in operation")
-parser.add_argument("--file_excep", dest='file_exc', help="Files to be exempted from operation.\
-    Usage: [file1, file2, file3]")
-parser.add_argument("--dir_excep", dest='dir_exc', help="Directories to be exempted from operation\
-    Usage: [dir1, dir2, dir3]")
+parser.add_argument("--file_excep", dest='file_excep', help="Files to be exempted from operation.\
+    \nUsage: --file_excep file_1 file_2 ... file_n", nargs='*')
+parser.add_argument("--dir_excep", dest='dir_excep', help="Directories to be exempted from operation\
+    \nUsage: --dir_excep dir_1 dir_2 ... dir_n", nargs='*')
 parser.add_argument("--target_dir", dest='target_dir', help="Directory to perform the operation")
 
 args = parser.parse_args()
@@ -174,11 +194,11 @@ args = parser.parse_args()
 parameters['cmd-line'] = ' '.join(sys.argv)
 parameters['f_type'] = args.f_format if args.f_format else parameters['f_type']
 
-parameters['dir_exp'] = parameters['dir_exp']+ list(args.dir_exc.split()) \
-    if args.dir_exc else parameters['dir_exp']
+parameters['dir_exp'] = parameters['dir_exp'] + args.dir_excep \
+    if args.dir_excep else parameters['dir_exp']
 
-parameters['file_exp'] = parameters['file_exp']+ list(args.file_exc.split()) \
-    if args.file_exc else parameters['file_exp']
+parameters['file_exp'] = parameters['file_exp'] + args.file_excep \
+    if args.file_excep else parameters['file_exp']
 
 parameters['target_dir'] = args.target_dir if args.target_dir else parameters['target_dir']
 

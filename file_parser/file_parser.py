@@ -121,7 +121,7 @@ class xFinder():
         """
         f1 = open(f_name, 'r')
         # Pattern to find 3 words before and after the keyword
-        patt = r"((?:[\S]+\s+|[\w]+){0,3})apple((?:[\w]+|\s+[\S]+){0,3})"
+        patt = r"((?:[\S]+\s+|[\w]+){0,3})" + self.keyword + r"((?:[\w]+|\s+[\S]+){0,3})"
         l_no = 0
         for line in f1:
             l_no += 1 # For line numbers

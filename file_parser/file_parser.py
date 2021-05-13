@@ -107,7 +107,7 @@ class xFinder():
         """
         f1 = open(f_name, 'r')
         # Pattern to find 3 words before and after the keyword
-        patt = "((?:[\S]+\s+){1,3})"+self.keyword+"((?:\s+[\S]+){1,3})"
+        patt = r"((?:[\S]+\s+|[\w]+){0,3})apple((?:[\w]+|\s+[\S]+){0,3})"
         l_no = 0
         for line in f1:
             l_no += 1 # For line numbers
@@ -175,7 +175,8 @@ class xFinder():
 parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 
 parser.add_argument("--search", dest='search', \
-    help="Keyword to search in files. \nUsage: --search \"keyword\"")
+    help="Keyword to search in files. Returns substring matches.\
+        \nUsage: --search \"keyword\"")
 parser.add_argument("--rename", dest='rename', nargs='*', \
     help="Rename files flag. Usage:\
         \n1. --rename prefix str_1 -> Prefix all file names in target. \

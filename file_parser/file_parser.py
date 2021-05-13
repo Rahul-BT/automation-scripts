@@ -42,6 +42,7 @@ parameters = {
     'replace': {'val_1': '', 'val_2':''},
     'rename': {'type':'', 'val_1':'', 'val_2':''},
     'target_dir': os.getcwd(),
+    'target_files': [],
     'dir_exp': ['.git'],
     'file_exp': ['.gitignore'],
     'cmd-line': ''
@@ -55,9 +56,9 @@ class xFinder():
         Args:
             parameters (dict): A dict having all the parameters required for the operation (search/rename)
         """
-
         self.hits = 0
         self.target_dir = parameters['target_dir']
+        self.target_files = parameters['target_files']
         self.op = parameters['f_op']
 
         # Get the file name for logging purpose
@@ -224,6 +225,10 @@ class xFinder():
         dir_ = [x for x in elements if (os.path.isdir(x) and x not in self.dir_exceptions)]
         file_ = [x for x in elements if (os.path.isfile(x) and x.endswith(self.file_type))]
         
+        # Check if the files in the current dir matches the target files (if any)
+        if self.target_files:
+            file_ = [x for x in file_ if x in self.target_files]
+
         # Parse through the child dirs 
         if dir_:
             for i in dir_:
@@ -264,6 +269,8 @@ parser.add_argument("--file_excep", dest='file_excep', help="Files to be exempte
 parser.add_argument("--dir_excep", dest='dir_excep', help="Directories to be exempted from operation\
     \nUsage: --dir_excep dir_1 dir_2 ... dir_n", nargs='*')
 parser.add_argument("--target_dir", dest='target_dir', help="Directory to perform the operation")
+parser.add_argument("--target_files", dest='target_files', nargs='*', \
+    help="Directory to perform the operation")
 
 args = parser.parse_args()
 
@@ -278,6 +285,9 @@ parameters['file_exp'] = parameters['file_exp'] + args.file_excep \
     if args.file_excep else parameters['file_exp']
 
 parameters['target_dir'] = args.target_dir if args.target_dir else parameters['target_dir']
+parameters['target_files'] = parameters['target_files'] + args.target_files \
+    if args.target_files else parameters['target_files']
+
 print("")
 if args.search:
     if args.replace:

@@ -222,7 +222,8 @@ parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument("--search", dest='search', \
     help="Keyword to search in files. \nUsage: --search \"keyword\"")
 parser.add_argument("--replace_by", dest='replace',\
-    help="Value to replace the keyword with in the files. \nUasge: --replace \"value\"")
+    help="Value to replace the keyword with in the files. This will not replace substrings.\
+        \nUasge: --replace \"value\"")
 parser.add_argument("--rename", dest='rename', nargs='*', \
     help="Rename files flag. Usage:\
         \n1. --rename prefix str_1 -> Prefix all file names in target. \

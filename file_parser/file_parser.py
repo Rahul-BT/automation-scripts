@@ -25,14 +25,6 @@ import os, re, sys
 import logging
 import argparse
 
-# Dir/Files to be avoided in search operation
-dir_exp = ['.git']
-file_exp = ['.gitignore']
-
-# Define the parameters (default)
-f_op = 'search'
-log_dest=''
-
 parameters = {
     'f_op': 'search',
     'f_type': 'txt',
@@ -40,12 +32,14 @@ parameters = {
     'rename': {'type':'', 'val_1':'', 'val_2':''},
     'target_dir': os.getcwd(),
     'dir_exp': ['.git'],
-    'file_exp': ['.gitignore']
+    'file_exp': ['.gitignore'],
+    'cmd-line': ''
 }
 
 class xFinder():
     
     def __init__(self, parameters):
+
         self.target_dir = parameters['target_dir']
         self.op = parameters['f_op']
         self.target_dir = parameters['target_dir']
@@ -53,9 +47,10 @@ class xFinder():
         # Get the file name for logging purpose
         self.file_name = os.path.basename(__file__)
         self.log_name = "{}.log".format(self.file_name[:-3])
-        logging.basicConfig(filename=self.log_name, filemode='w', format='%(asctime)s - %(message)s', \
+        logging.basicConfig(filename=self.log_name, filemode='a', format='%(asctime)s - %(message)s', \
             datefmt='%d-%b-%Y %H:%M:%S', level=logging.INFO)
-        logging.info("Log for File: {}".format(self.file_name))
+        logging.info("\n\n\nLog for File: {}".format(self.file_name))
+        logging.info("[CMD] {}".format(parameters['cmd-line']))
         global log_dest
         log_dest = "{}\\{}".format(os.getcwd(), self.log_name)
 
@@ -74,31 +69,25 @@ class xFinder():
             
         elif self.op == 'rename':
             self.rename = parameters[parameters['f_op']]
-            logging.info("OPERATION= {}\nType=\"{} - {} {}\"\nFILE_TYPE=\".{}\" \nTARGET_DIRECTORY: {}".\
+            logging.info("OPERATION= {}\nType=\"{} {} {}\"\nFILE_TYPE=\".{}\" \nTARGET_DIRECTORY: {}".\
             format(str.upper(self.op), self.rename['type'],self.rename['val_1'], self.rename['val_2'], \
                 self.file_type, self.target_dir))
-        
-
-
-    # def exceptions(self, dir_exceptions=[], file_exceptions=[]):
-    #     """ Directory and files to avoid checking """
-    #     self.dir_exceptions += dir_exceptions
-    #     self.file_exceptions += file_exceptions
-
-    # def define_keywords(self, keyword, file_type):
-    #     """ Function to define the keywords for search """
-    #     self.keyword = keyword
-    #     self.file_type = file_type
-        
-    #     logging.info("OPERATION= {}\nKEYWORD=\"{}\"\nFILE_TYPE=\".{}\" \nTARGET_DIRECTORY: {}".\
-    #         format(str.upper(self.op), self.keyword, self.file_type, self.target_dir))
-
+    # TODO:
+    # Fix the print parametrs function, especially the rename part
     def print_parameters(self):
-        """ Function to print the search parameters """
-        #print("PARAMETERS\nOperation: {}\nKeyword: {}\nFile_Type: {}".format(str.upper(self.op),\
-        #self.keyword, self.file_type))
-        #print("Target_Directory: {}\n".format(self.target_dir))
-        print("PARAMETERS\n{}".format(self.parameters))
+        """ Function to print the parameters """
+        if self.op == 'search':
+            print("PARAMETERS\nOPERATION: {}\nKEYWORD: \"{}\"\nFILE_TYPE: .{}".format(str.upper(self.op),\
+                self.keyword, self.file_type))
+        elif self.op == 'rename':
+            if self.rename['type'] in ['prefix', 'suffix']:
+                print("PARAMETERS\nOPERATION: {}\nTYPE: {}\nSTRING: {}\nFILE_TYPE: .{}".format(str.upper(self.op),\
+                    self.rename['type'], self.rename['val_1'], self.file_type))
+            elif self.rename['type'] == 'subs':
+                print("PARAMETERS\nOPERATION: {}\nTYPE: {}\nSTRING: {} \nREPLACE BY: {}\nFILE_TYPE: .{}".\
+                    format(str.upper(self.op), self.rename['type'], self.rename['val_1'], self.rename['val_2'], self.file_type))
+        print("Target_Directory: {}\n".format(self.target_dir))
+        #print("PARAMETERS\n{}".format(self.parameters))
 
     def find_words(self, f_name):
         """ Function to search the keyword in the files """
@@ -120,12 +109,14 @@ class xFinder():
     def rename_file(self, f_name):
         split_fname = re.search('(.*)(\.[\w]*)$', f_name).groups()
         new_name = {
-            'prefix': "{}_{}".format(self.rename['val_1']),
-            'suffix': "{}_{}{}".format(self.rename['val_1'], split_fname[0], split_fname[1]),
+            'prefix': "{}_{}".format(self.rename['val_1'], f_name),
+            'suffix': "{}_{}{}".format( split_fname[0], self.rename['val_1'], split_fname[1]),
             'subs': f_name.replace(self.rename['val_1'], self.rename['val_2'])
         }
-
-        os.rename(f_name, new_name[self.rename['type']])
+        if f_name != new_name[self.rename['type']]:
+            os.rename(f_name, new_name[self.rename['type']])
+            logging.info("{}\\{} -> {}".format(os.getcwd(), f_name, new_name[self.rename['type']]))
+            print("{}\\{} -> {}".format(os.getcwd(), f_name, new_name[self.rename['type']]))
 
     def parse_dir(self):
         """ Function (recursive) to parse the directories and find files with the given format. 
@@ -180,6 +171,7 @@ parser.add_argument("--target_dir", dest='target_dir', help="Directory to perfor
 args = parser.parse_args()
 
 # Update the paramters to the variables
+parameters['cmd-line'] = ' '.join(sys.argv)
 parameters['f_type'] = args.f_format if args.f_format else parameters['f_type']
 
 parameters['dir_exp'] = parameters['dir_exp']+ list(args.dir_exc.split()) \
@@ -195,11 +187,16 @@ if args.search:
     parameters['search']['val_1'] = args.search
 elif args.rename:
     parameters['f_op'] = 'rename'
-    values = args.rename.split()
-    parameters['rename'] = dict(zip(parameters[f_op], values))
+    if args.rename[0] in ['prefix', 'suffix', 'subs']:
+        parameters['rename']['type'] = args.rename[0]
+        parameters['rename']['val_1'] = args.rename[1]
+        parameters['rename']['val_2'] = args.rename[2] if len(args.rename)>2 else ''
+    else:
+        print("[ERROR]: RENAME TYPE \"{}\" NOT PERMITTED".format(args.rename[0]))
+        sys.exit(1)
 
 test = xFinder(parameters)
 
-# test.print_parameters()
+test.print_parameters()
 test.parse_dir()
 print("\nLOG AT: {}".format(log_dest))

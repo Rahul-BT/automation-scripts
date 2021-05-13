@@ -2,14 +2,22 @@
 
 ## Operations
 ### 1. Search for a keyword
-The user can search a keyword in all the files in the current directory and also in its child directories. The file format for the search can be specified (deafult is 'txt') in the command line. The script will search the keyword in all files in the specified format. File and directory exceptions are allowed.
+The user can search a keyword in all the files in the current directory and also in its child directories. Substring matches will also be shown. The file format for the search can be specified (deafult is 'txt') in the command line. The script will search the keyword in all files in the specified format. File and directory exceptions are allowed.
 
 Example 
  1. `python file_parser.py --search "honey" --file_format txt`
  2. `python file_parser.py --search "honey" --file_format txt --target_dir <target_path>`
  3. `python file_parser.py --search "honey" --file_format txt --file_excep file_1 file_2 ... file_n --dir_excep dir_1 dir2 ... dir_n`
     
-### 2. Rename files
+### 2. Replace keyword in files
+The user can search and replace keyword in all the files in the current directory and also in its child directories and. The file format for the search can be specified (deafult is 'txt') in the command line. File and directory exceptions are allowed. This operation will replace only whole words and not substrings.
+
+Example 
+ 1. `python file_parser.py --search "honey" --replace_by "sugar" --file_format txt`
+ 2. `python file_parser.py --search "honey" --replace_by "sugar" --file_format txt --target_dir <target_path>`
+ 3. `python file_parser.py --search "honey" --replace_by "sugar" --file_format txt --file_excep file_1 file_2 ... file_n --dir_excep dir_1 dir2 ... dir_n`
+ 
+### 3. Rename files
 The user can use this script to rename files in the current directory and also in its child directories. The supported rename operations are 'prefix', 'suffix' and 'subs(titute)'. The file format can be specified (default is 'txt'). File and directory exceptions are allowed.
     
 Example

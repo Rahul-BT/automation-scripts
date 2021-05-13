@@ -80,22 +80,28 @@ class xFinder():
 
         self.file_type = parameters['f_type']
 
+        logging.info("OPERATION= " + str.upper(self.op))
+
         if self.op == 'search':
             self.keyword = parameters[parameters['f_op']]['val_1']
-            logging.info("OPERATION= {}\nKEYWORD=\"{}\"\nFILE_TYPE=\".{}\" \nTARGET_DIRECTORY: {}".\
-            format(str.upper(self.op), self.keyword, self.file_type, self.target_dir))
+            logging.info("KEYWORD=\"{}\"".format(self.keyword))
             
         elif self.op == 'replace':
             self.keyword = parameters[parameters['f_op']]['val_1']
             self.replace_value = parameters[parameters['f_op']]['val_2']
-            logging.info("OPERATION= {}\nKEYWORD=\"{}\"\nREPLACE_WITH: \"{}\"\nFILE_TYPE=\".{}\" \nTARGET_DIRECTORY: {}".\
-            format(str.upper(self.op), self.keyword, self.replace_value, self.file_type, self.target_dir))
+            logging.info("KEYWORD=\"{}\"\nREPLACE_WITH: \"{}\"".format(self.keyword, self.replace_value))
         
         elif self.op == 'rename':
             self.rename = parameters[parameters['f_op']]
-            logging.info("OPERATION= {}\nType=\"{} {} {}\"\nFILE_TYPE=\".{}\" \nTARGET_DIRECTORY: {}".\
-            format(str.upper(self.op), self.rename['type'],self.rename['val_1'], self.rename['val_2'], \
-                self.file_type, self.target_dir))
+            if self.rename['type'] == 'subs':
+                logging.info("Type=\"substitute old={} with new={}\"".format(self.rename['type'],self.rename['val_1'],self.rename['val_2']))
+            else:
+                logging.info("Type=\"{} using {}\"".format(self.rename['type'],self.rename['val_1'],self.rename['val_2']))
+        
+        logging.info("FILE_TYPE=\".{}\"".format(self.file_type))
+        logging.info("TARGET_DIRECTORY= {}".format(self.target_dir))
+        if self.target_files:
+            logging.info("TARGET_FILES: {}".format(', '.join([x for x in self.target_files])))
 
     def print_parameters(self):
         """ Function to print the parameters """
